@@ -35,7 +35,7 @@ public class Matrix{
 	
 	public double magnitude()  // complete
 	{
-		double[][] a = this.matrixArray;
+		double[][] a = this.matrixArray.clone();
 		double output=0;
 		if( a.length != 2 )
 		{
@@ -54,8 +54,8 @@ public class Matrix{
 	
 	public double angleBetween(Matrix m2) // complete
 	{
-		double[][] a = this.matrixArray;
-		double[][] b = m2.matrixArray;
+		double[][] a = this.matrixArray.clone();
+		double[][] b = m2.matrixArray.clone();
 		double output=0;
 		if( !(a.length == 2 && b.length == 2) )
 		{
@@ -70,8 +70,8 @@ public class Matrix{
 	
 	public double dotProduct(Matrix m2)  // complete
 	{
-		double[][] a = this.matrixArray;
-		double[][] b = m2.matrixArray;
+		double[][] a = this.matrixArray.clone();
+		double[][] b = m2.matrixArray.clone();
 		double output = 0;
 		if( !(a.length == 2 && a[0].length == b[0].length) )
 		{
@@ -91,90 +91,121 @@ public class Matrix{
 	{
 		// given row starts at 0.  apply swapScaleReplace. advance row by 1, repeat, until at bottom row of matrix.
 		// https://textbooks.math.gatech.edu/ila/parametric-form.html
+		double[][] matrixContents = {{1, 0}, {0, 1}};
+		return new Matrix(matrixContents);
 	}
 
-	public Matrix rowReduceToRREF()   // completed: does not interpret RowReducedEchelonForm to provide solution(s).
+	public Matrix reducedRowEchelonForm()   // completed: does not interpret RowReducedEchelonForm to provide solution(s).
+	{
+		Matrix outputMatrix = this; // makes a clone
+		for(int topRow = 0, leftColumn = 0; topRow < outputMatrix.matrixArray[0].length && leftColumn < outputMatrix.matrixArray.length; topRow++, leftColumn++)  // || leftColumn < output.length
+		{
+			outputMatrix.swap(leftColumn, topRow);
+			
+			topRow = outputMatrix.scale(leftColumn, topRow);
+			
+			outputMatrix.rowReduceDown(leftColumn, topRow);
+		}
+		outputMatrix.rowReduceUp();
+		return outputMatrix;
+	}
+	
+	// If the leftmost column in the given row is 0, find the row with the the left-most entry of all rows at or lower than the row given. 
+	// If there are more than one, find the first. Swap that row for the row given, so the leftmost entry is in the given row.
+	// After this routine the pivot for the row is at output[leftColumn][row].
+	public void swap(int leftColumn, int topRow)   // completed: a helper for "rowReduceDown" 
 	{
 		double[][] output = this.matrixArray.clone();
-		double scaleFactor;
 		double temp;
-		for(int topRow = 0, leftColumn = 0; topRow < output[0].length; topRow++)
+		if(output[leftColumn][topRow] == 0)
 		{
-			// If the leftmost column in the given row is 0, find the row with the the left-most entry of all rows at or lower than the row given. 
-			// If there are more than one, find the first. Swap that row for the row given, so the leftmost entry is in the given row.
-			// After this routine the pivot for the row is at output[leftColumn][row].
-			if(output[leftColumn][topRow] == 0)
+			for(int row = topRow; row < output[0].length; row++)
 			{
-				for(int row = topRow; row < output[0].length; row++)
+				if(output[leftColumn][row] != 0)  
 				{
-					if(output[leftColumn][row] != 0)  
+					for(int col = 0; col < output.length; col++)
 					{
-						for(int col = 0; col < output.length; col++)
-						{
-							temp = output[col][topRow];
-							output[col][topRow] = output[col][row];
-							output[col][row] = temp;
-						}
-
+						temp = output[col][topRow];
+						output[col][topRow] = output[col][row];
+						output[col][row] = temp;
 					}
+
 				}
 			}
-			// Scale the row given so the pivot (leftmost entry) is 1.  
-			scaleFactor = 1.0/output[leftColumn][topRow];
+		}
+		this.matrixArray = output;
+	}
+
+	public int scale(int leftColumn, int topRow)   // completed:  a helper method to "rowReduceDown"
+	{
+		double[][] output = this.matrixArray.clone();
+		// stop loop and don't scale row if position is 0, scalefactor would be Infinite/NaN
+		if(output[leftColumn][topRow] == 0)  
+		{
+			topRow = output[0].length;  // stop topRow loop
+		}
+		else
+		{
+			double scaleFactor = 1.0/output[leftColumn][topRow];
 			for(int col = 0; col < output.length; col++)
 			{
 				output[col][topRow] = scaleFactor*output[col][topRow];
 			}
-			// Row-replace any lower row with a leftmost entry in the same column, so that entry becomes 0.  
-			for(int row = topRow + 1; row < output[0].length; row++)
+
+			this.matrixArray = output;
+		}
+		return topRow;
+	}
+
+	public void rowReduceDown(int leftColumn, int topRow)  // completed: helper method for RREF
+	{
+		double[][] output = this.matrixArray.clone();
+		double scaleFactor;
+		for(int row = topRow + 1; row < output[0].length; row++)
+		{
+			if(output[leftColumn][row] != 0)
 			{
-				if(output[leftColumn][row] != 0)
+				scaleFactor = -1*output[leftColumn][row];
+				for (int col = leftColumn; col < output.length; col++)
 				{
-					for (int col = leftColumn; col < output.length; col++)
-					{
-						scaleFactor = -1*output[leftColumn][row];
-						output[col][row] = scaleFactor*output[col][row];
-					}
+					output[col][row] += scaleFactor*output[col][topRow];
 				}
 			}
 		}
-		return new Matrix(output);
+		
+		this.matrixArray = output;
 	}
-
-	public Matrix swap(int rowA, int rowB)   // completed: NOT a helpter for "rowReduce"
+	
+	public void rowReduceUp()  // completed: helper method for RREF
 	{
-		double[][] a = this.matrixArray;
-		double[][] output = a.clone();
-		double temp;
-		for(int column = 0; column < a.length; column++)
-		{
-			temp = output[column][rowA];
-			output[column][rowA] = a[column][rowB];
-			output[column][rowB] = temp;
-		}
-		return new Matrix(output);
-	}
-
-	public Matrix scale(double scalar, int row)   // completed: NOT a helper method to "rowReduce"
-	{
+		// Start at bottomRow = length - 1, leftColumn = 0. If the value at that position is zero, advance leftColumn, checking each time whether the value there is zero.
+		// If all the positions in the row are 0, decrease bottomRow by 1, reset leftColumn to 0, and perform zero checks on the row above, left to right.
+		// When a nonzero element is found, it should be 1.  Row-replace up using that row, so all positions above bottomRow at leftColumn have value 0, then begin zero 
+		// check on the row above.
 		double[][] output = this.matrixArray.clone();
-		for(int column = 0; column < output.length; column++)
+		double scaleFactor;
+		for(int bottomRow = output[0].length - 1; bottomRow >= 0; bottomRow--)
 		{
-			output[column][row] = scalar*output[column][row];
-		}
-		return new Matrix(output);
-	}
+			for(int leftColumn = 0; leftColumn < output.length; leftColumn++)
+			{
+				if(output[leftColumn][bottomRow] !=0)  // if we found a pivot
+				{
+					for(int row = bottomRow - 1; row >= 0; row--)  // row-replace up
+					{
+						scaleFactor = -1*output[leftColumn][row];
 
-	public Matrix replace(double scalar, int rowScaled, int rowReplaced)   // completed: NOT a helper method to "rowReduce". Note if rowScaled=rowReplaced, this is just a scale operation.
-	{
-		double[][] output = this.matrixArray.clone();
-		for(int column = 0; column < output.length; column++)
-		{
-			output[column][rowReplaced] = output[column][rowReplaced] + scalar*output[column][rowScaled];
+						for(int col = 0; col < output.length; col++)
+						{
+							output[col][row] += scaleFactor*output[col][bottomRow];
+						}
+					} 
+					leftColumn = output.length;  // stop searching for pivot
+				}
+			}
 		}
-		return new Matrix(output);
+		this.matrixArray = output;
 	}
-
+	
 	public Matrix invert()
 	{
 		double[][] matrixContents = {{1, 0}, {0, 1}};
@@ -201,8 +232,8 @@ public class Matrix{
 	
 	public Matrix multiply(Matrix m2)
 	{
-		double[][] a = this.matrixArray;
-		double[][] b = m2.matrixArray;
+		double[][] a = this.matrixArray.clone();
+		double[][] b = m2.matrixArray.clone();
 		double[][] output;
 		double value;
 		if( !(a.length == b[0].length && a[0].length == b.length) )
@@ -255,7 +286,7 @@ public class Matrix{
 	{
 		double s;
 		Matrix minorMatrix;
-		double[][] a = this.matrixArray;
+		double[][] a = this.matrixArray.clone();
 		if( !(a.length >= 3 && a[0].length >= 3) )
 		{
 			System.out.println("Could not make CoFactor.");
@@ -286,7 +317,7 @@ public class Matrix{
 	
 	public double determinant()  // complete
 	{
-		double[][] a = this.matrixArray;
+		double[][] a = this.matrixArray.clone();
 		double output = 0;
 		CoFactor parentCoFactor;
 		int determinantTermSign = 1;
@@ -314,7 +345,7 @@ public class Matrix{
 		
 	public String toString()  // complete
 	{
-		double[][] a = this.matrixArray;
+		double[][] a = this.matrixArray.clone();
 		String output = "";
 		if(a == null)
 			output = "null";
@@ -352,7 +383,7 @@ public class Matrix{
 		
 		public String toString()
 		{
-			double[][] a = this.minorMatrix.matrixArray;
+			double[][] a = this.minorMatrix.matrixArray.clone();
 			String output = "";
 			if(a == null)
 				output = "null";
@@ -380,3 +411,48 @@ public class Matrix{
 	}	
 }
 
+		/* Set default starting point for row-replacement up, for the case of a consistent system.
+		int bottomRow = output[0].length - 1, rightColumn = output.length - 2;  
+		// Check to see whether there is no solution / the system is inconsistent: every entry on the bottom row zero, except for the last which is non-zero pivot.
+		// If so, scale the last entry to 1, then row-replace up in the last column.
+		if(output[output.length-1][output[0].length-1] == 1 && output[output.length-2][output[0].length-1] == 0) // If inconsistent
+		{	
+			output[output.length-1][output[0].length-1] = 1;
+			for(int row = output[0].length-2; row >= 0; row--)
+			{
+				output[output.length-1][row] = 0;
+			}
+		}
+		// In the case of a dependent or inconsistent system, set starting place for row-replacement to the first non-zero entry "1" on the left, in the second to last row.  
+		// Begin row replacement from that pivot point instead of the default.
+		if(output[output.length-2][output[0].length-1] == 0)  
+		{
+			bottomRow = output[0].length - 2;
+			for(rightColumn = 0; rightColumn < output.length - 1 && output[rightColumn][bottomRow] == 0; rightColumn++)
+			{
+				// no code block, purpose is to advance rightColumn to the right place.
+			}
+		}
+		// Start at bottom row, rightmost column (left of solution vector).  Row-replace any higher row with a rightmost column entry, so that entry becomes zero.  
+		// If the bottom has zero as bottom-rightmost entry, move up until the row does have a nonzero rightmost column entry.
+		for(; bottomRow >= 0; bottomRow--, rightColumn--)
+		{
+			while(output[rightColumn][bottomRow] == 0)
+			{
+				bottomRow--;
+			}
+			for(int row = bottomRow - 1; row >= 0; row--)
+			{
+				if(output[rightColumn][row] != 0)
+				{
+					scaleFactor = -1*output[rightColumn][row];
+					for (int col = rightColumn; col <= output.length - 1; col++)
+					{
+						output[col][row] += scaleFactor*output[col][bottomRow];
+					}
+				}
+			}
+			whatTF(output);
+		}
+		return new Matrix(output);
+	} */
