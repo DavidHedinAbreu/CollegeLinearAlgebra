@@ -98,13 +98,15 @@ public class Matrix{
 	public Matrix reducedRowEchelonForm()   // completed: does not interpret RowReducedEchelonForm to provide solution(s).
 	{
 		Matrix outputMatrix = this; // makes a clone
-		for(int topRow = 0, leftColumn = 0; topRow < outputMatrix.matrixArray[0].length && leftColumn < outputMatrix.matrixArray.length; topRow++, leftColumn++)  // || leftColumn < output.length
+		for(int topRow = 0, leftColumn = 0; topRow < outputMatrix.matrixArray[0].length && leftColumn < outputMatrix.matrixArray.length; leftColumn++) 
 		{
 			outputMatrix.swap(leftColumn, topRow);
 			
-			topRow = outputMatrix.scale(leftColumn, topRow);
-			
-			outputMatrix.rowReduceDown(leftColumn, topRow);
+			if( outputMatrix.scale(leftColumn, topRow) )  // skip rowReduceDown if there were no non-zero values in leftColumn.
+			{
+				outputMatrix.rowReduceDown(leftColumn, topRow);
+				topRow++;   // move topRow down if and only if the scale and rowReduceDown steps took place. Otherwise stay in the same row.
+			}
 		}
 		outputMatrix.rowReduceUp();
 		return outputMatrix;
@@ -136,13 +138,14 @@ public class Matrix{
 		this.matrixArray = output;
 	}
 
-	public int scale(int leftColumn, int topRow)   // completed:  a helper method to "rowReduceDown"
+	public boolean scale(int leftColumn, int topRow)   // completed:  a helper method to "rowReduceDown"
 	{
 		double[][] output = this.matrixArray.clone();
-		// stop loop and don't scale row if position is 0, scalefactor would be Infinite/NaN
+		boolean doRowReduceDown = true;
+		// if no row in leftColumn is has nonzero entry, don't scale row because scalefactor would be Infinite/NaN, pass flag so don't rowReduceDown either.
 		if(output[leftColumn][topRow] == 0)  
 		{
-			topRow = output[0].length;  // stop topRow loop
+			doRowReduceDown = false;  
 		}
 		else
 		{
@@ -154,7 +157,7 @@ public class Matrix{
 
 			this.matrixArray = output;
 		}
-		return topRow;
+		return doRowReduceDown;
 	}
 
 	public void rowReduceDown(int leftColumn, int topRow)  // completed: helper method for RREF

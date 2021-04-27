@@ -6,19 +6,16 @@
 public class TestMatrix {
 	
 	public static void main (String[] args) {
-		double[][] a = {{1,6,11,16,21},{2,7,12,17,22},{3,8,13,18,23},{4,9,14,19,24},{5,10,15,20,25}};
-		Matrix m1 = new Matrix(a);
-		double[][] b = {{1,2},{3,4}};
-		Matrix m2 = new Matrix(b);
-		System.out.println("\n" + m1.toString());
-		System.out.println("\n" + m2.toString());
-		
-		System.out.println(m2.replace(0.5,1,1));
-		
-		// Matrix m3 = m1.multiply(m2);
-		// System.out.println(m3.toString());
-		//System.out.println(m1.magnitude() );
-		//System.out.println("Determinant is " + m2.determinant() );
+		double[][] consistent = {{4,3,1},{-5,1,4},{1,-2,1},{2,9,5}};  // (2, 1, -1)
+		Matrix m1 = new Matrix(consistent);
+		double[][] inconsistent = {{-3,1,0},{2,0,2},{-1,-2,-7},{0,-1,3}};
+		Matrix m2 = new Matrix(inconsistent);
+		double[][] dependent = {{2,-1,1},{3,-4,-2},{5,-10,-8},{0,0,0}};
+		Matrix m3 = new Matrix(dependent);
+				
+		System.out.println(m1.reducedRowEchelonForm().toString() );
+		System.out.println(m2.reducedRowEchelonForm().toString() );
+		System.out.println(m3.reducedRowEchelonForm().toString() );
 	}
 }
 
