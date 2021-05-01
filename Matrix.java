@@ -3,7 +3,7 @@
  * Author: David Hedin-Abreu
  * 
  * Systems of linear equations
-Row reduction and echelon forms
+Row reduction and echelon forms  DONE
 Matrix operations, including inverses
 Block matrices
 Linear dependence and independence
@@ -227,13 +227,32 @@ public class Matrix{
 		return new Matrix(matrixContents);
 	}
 	
-	public Matrix add(Matrix a, Matrix b)
+	public Matrix add(Matrix m)  
 	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
+		double[][] a = this.matrixArray.clone();
+		double[][] b = m.matrixArray.clone();
+		double[][] output;
+		if( !(a.length == b.length && a[0].length == b[0].length) )
+		{
+			System.out.println("Could not add matrices.");
+			output = null;
+		}
+		else
+		{
+			int numCols = a.length, numRows = a[0].length;
+			output = new double[numCols][numRows];
+			for(int col = 0; col < numCols; col++)
+			{
+				for(int row = 0; row < numRows; row++)
+				{
+					output[col][row] = a[col][row] + b[col][row]; 
+				}
+			}
+		}
+		return new Matrix(output);
 	}
 	
-	public Matrix multiply(Matrix m2)
+	public Matrix multiply(Matrix m2)  // complete
 	{
 		double[][] a = this.matrixArray.clone();
 		double[][] b = m2.matrixArray.clone();
@@ -261,24 +280,31 @@ public class Matrix{
 		return new Matrix(output);
 	}
 	
-	public Matrix add(double a, Matrix b)
+	public Matrix add(double scalar)  // complete
 	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
+		double[][] output = this.matrixArray.clone();
+		for(int col = 0; col < output.length; col++)
+		{
+			for(int row = 0; row < output[0].length; row++)
+			{
+				output[col][row] = output[col][row] + scalar;
+			}
+		}
+		return new Matrix(output);	}
+
+	public Matrix multiply(double scalar)  // complete
+	{
+		double[][] output = this.matrixArray.clone();
+		for(int col = 0; col < output.length; col++)
+		{
+			for(int row = 0; row < output[0].length; row++)
+			{
+				output[col][row] = output[col][row] * scalar;
+			}
+		}
+		return new Matrix(output);
 	}
 
-	public Matrix multiply(double a, Matrix b)
-	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
-	}
-
-	public Matrix divide(double a)
-	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
-	}
-		
 	public static Matrix identity(int dimension)
 	{
 		double[][] matrixContents = {{1, 0}, {0, 1}};
@@ -294,8 +320,7 @@ public class Matrix{
 		{
 			System.out.println("Could not make CoFactor.");
 			s = 0;
-			double[][] bogus = {};
-			minorMatrix = new Matrix(bogus);
+			minorMatrix = new Matrix(null);
 		}
 		else
 		{
@@ -340,10 +365,103 @@ public class Matrix{
 		return output;
 	}
 	
+	public Matrix minorMatrix(int skippedColumn, int skippedRow)  //  complete (assistant method to "inverse")
+	{
+		Matrix minorMatrix;
+		double[][] majorArray = this.matrixArray.clone();
+		int numCols = majorArray.length, numRows = majorArray[0].length;
+		if( !(numCols >= 3 && numRows >= 3) )
+		{
+			System.out.println("Could not make minor matrix.");
+			minorMatrix = new Matrix(null);
+		}
+		else
+		{
+			double[][] minorArray = new double[numCols-1][numRows-1];
+			int colMinor = 0, rowMinor;
+			for(int colMajor = 0; colMajor < numCols; colMajor++)
+			{
+				rowMinor = 0;
+				for(int rowMajor = 0; rowMajor < numRows; rowMajor++)
+				{
+					// System.out.println("colMinor " + colMinor + " rowMinor " + rowMinor + ", colMajor " + colMajor + " rowMajor " + rowMajor);
+					if( !(rowMajor == skippedRow || colMajor == skippedColumn) )
+					{
+						minorArray[colMinor][rowMinor] = majorArray[colMajor][rowMajor];
+						// System.out.println("   minorArray[colMinor][rowMinor] " + minorArray[colMinor][rowMinor]) ;
+						rowMinor++;
+					}
+				}
+				if( !(colMajor == skippedColumn) )
+				{
+					colMinor++;
+				}			}
+			minorMatrix = new Matrix(minorArray);
+		}
+
+		return minorMatrix;
+	}
+	
+
+	public Matrix transpose()  // complete
+	{
+		double[][] a = this.matrixArray.clone();
+		int numColsA = a.length, numRowsA = a[0].length;
+		double[][] transposeA = new double[numRowsA][numColsA];  // number of rows in transposed matrix = number of columns in original and vice versa.
+		for(int col = 0; col < numColsA; col++)
+			for(int row = 0; row < numRowsA; row++)
+				transposeA[row][col] = a[col][row];
+		return new Matrix(transposeA);
+	}
+		
+
 	public Matrix inverse()
 	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
+		double[][] a = this.matrixArray.clone();
+		int numColsA = a.length, numRowsA = a[0].length;
+		double[][] inverse = new double[numColsA][numRowsA];
+		Matrix m;
+		
+		if(!(numColsA == numRowsA) )
+		{
+			System.out.println("Cannot find inverse of non-square matrix.");
+			m = null;
+		}
+		else if(this.determinant() == 0)
+		{
+			System.out.println("The matrix is non-invertible, determinant 0.");
+			m = null;
+		}
+		else {
+			// calculate matrix of determinants of minors
+			for(int col = 0; col < numColsA; col++)
+				for(int row = 0; row < numRowsA; row++)
+				{
+					inverse[col][row] = this.minorMatrix(col, row).determinant();
+				}
+			System.out.println(inverse.toString() );
+			
+			// apply "checkerboard" or minuses
+			for(int col = 0; col < numColsA; col++)
+				for(int row = 0; row < numRowsA; row++)
+				{
+					if(col%2 == 1 ^ row%2 == 1)  // if exactly one of the coordinates is odd
+						inverse[col][row] = -1*inverse[col][row];
+				}
+			System.out.println(inverse.toString() );
+
+			// transpose checkerboarded matrix of minors
+			m = new Matrix(inverse);
+			inverse = m.transpose().matrixArray;
+			System.out.println(inverse.toString() );
+
+			// multiply matrix by 1/determinant of A.
+			m = new Matrix(inverse);
+			inverse = m.multiply(1/this.determinant() ).matrixArray;
+
+			m = new Matrix(inverse);
+		}
+		return m;
 	}
 		
 	public String toString()  // complete
