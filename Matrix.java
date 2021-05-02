@@ -33,6 +33,64 @@ public class Matrix{
 		matrixArray = a;
 	}
 	
+	public Matrix combineColumnwise(Matrix m2)  // complete
+	{
+		double[][] a = this.matrixArray;
+		double[][] b = m2.matrixArray;
+		Matrix m;
+		if(!(a[0].length == b[0].length))
+		{
+			System.out.println("Matrices or vectors could not be combined.  They must have the same number of rows.");
+			m = new Matrix(null);
+		}
+		else
+		{
+			double[][] output = new double[a.length + b.length][a[0].length];
+			int numRows = a[0].length;
+			for(int col = 0; col < a.length; col++)
+			{
+				for(int row = 0; row < numRows; row++)
+				{
+					output[col][row] = a[col][row];
+				}
+			}
+			for(int col = a.length; col < a.length + b.length; col++)
+			{
+				for(int row = 0; row < numRows; row++)
+				{
+					output[col][row] = b[col - a.length][row];
+				}
+			}
+			m = new Matrix(output);
+		}
+		return m;
+	}
+	
+	public Matrix subMatrixColumnwise(int colA, int colB)  // complete
+	{
+		double[][] a = this.matrixArray;
+		Matrix m;
+		if(colA > colB || colA < 0 || colB >= a.length)
+		{
+			System.out.println("Could not find submatrix taken columnwise. Illegal bounds.");
+			m = new Matrix(null);
+		}
+		else 
+		{
+			double[][] output = new double[colB - colA+1][a[0].length];
+			int numRows = a[0].length;
+			for(int col = colA, pos = 0; col <= colB && pos < colB - colA + 1; col++, pos++)
+			{
+				for(int row = 0; row < numRows; row++)
+				{
+					output[pos][row] = a[col][row];
+				}
+			}
+			m = new Matrix(output);
+		}
+		return m;
+	}
+	
 	public double magnitude()  // complete
 	{
 		double[][] a = this.matrixArray.clone();
@@ -112,11 +170,12 @@ public class Matrix{
 		return outputMatrix;
 	}
 	
-	// If the leftmost column in the given row is 0, find the row with the the left-most entry of all rows at or lower than the row given. 
-	// If there are more than one, find the first. Swap that row for the row given, so the leftmost entry is in the given row.
-	// After this routine the pivot for the row is at output[leftColumn][row].
+
 	public void swap(int leftColumn, int topRow)   // completed: a helper for "rowReduceDown" 
 	{
+		// If the leftmost column in the given row is 0, find the row with the the left-most entry of all rows at or lower than the row given. 
+		// If there are more than one, find the first. Swap that row for the row given, so the leftmost entry is in the given row.
+		// After this routine the pivot for the row is at output[leftColumn][row].
 		double[][] output = this.matrixArray.clone();
 		double temp;
 		if(output[leftColumn][topRow] == 0)
@@ -209,12 +268,6 @@ public class Matrix{
 		this.matrixArray = output;
 	}
 	
-	public Matrix invert()
-	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
-	}
-
 	public Matrix diagonalize()
 	{
 		double[][] matrixContents = {{1, 0}, {0, 1}};
@@ -227,7 +280,7 @@ public class Matrix{
 		return new Matrix(matrixContents);
 	}
 	
-	public Matrix add(Matrix m)  
+	public Matrix add(Matrix m)  // completed
 	{
 		double[][] a = this.matrixArray.clone();
 		double[][] b = m.matrixArray.clone();
@@ -257,23 +310,32 @@ public class Matrix{
 		double[][] a = this.matrixArray.clone();
 		double[][] b = m2.matrixArray.clone();
 		double[][] output;
-		double value;
-		if( !(a.length == b[0].length && a[0].length == b.length) )
+		if( !(a.length == b[0].length) )
 		{
-			System.out.println("Could not multiply matrices.");
+			System.out.println("Could not multiply matrices, number columns of A does not equal number rows of B.");
 			output = null;
 		}
 		else
 		{
-			output = new double[a[0].length][b.length];
+			output = new double[b.length][a[0].length];
 			for(int row = 0; row < a[0].length; row++)
 			{
 				for(int col = 0; col < b.length; col++)
 				{
-					value = 0; 
 					for(int pos = 0; pos < a.length; pos++) 
-						value += a[pos][row] * b[col][pos]; 
-					output[col][row] = value; 
+					{
+						output[col][row] += a[pos][row] * b[col][pos]; 
+					}
+				}
+			}
+			// If values that should be zero are non-zero because of error representing the numbers in binary, fix that.
+			double tolerance = 1E-16;
+			for(int col = 0; col < output.length; col++)
+			{
+				for(int row = 0; row < output[0].length; row++)
+				{
+					if(output[col][row] > -1*tolerance && output[col][row] < tolerance)
+						output[col][row] = 0;
 				}
 			}
 		}
@@ -302,12 +364,26 @@ public class Matrix{
 				output[col][row] = output[col][row] * scalar;
 			}
 		}
+		// If values that should be zero are non-zero because of error representing the numbers in binary, fix that.
+		double tolerance = 1E-16;
+		for(int col = 0; col < output.length; col++)
+		{
+			for(int row = 0; row < output[0].length; row++)
+			{
+				if(output[col][row] > -1*tolerance && output[col][row] < tolerance)
+					output[col][row] = 0;
+			}
+		}
 		return new Matrix(output);
 	}
 
-	public static Matrix identity(int dimension)
+	public static Matrix identity(int dimension)  // complete
 	{
-		double[][] matrixContents = {{1, 0}, {0, 1}};
+		double[][] matrixContents = new double[dimension][dimension];
+		for(int col = 0, row = 0; col < dimension; col++, row++)
+		{
+			matrixContents[col][row] = 1;
+		}
 		return new Matrix(matrixContents);
 	}
 	
@@ -414,8 +490,7 @@ public class Matrix{
 		return new Matrix(transposeA);
 	}
 		
-
-	public Matrix inverse()
+	public Matrix inverse()  // complete
 	{
 		double[][] a = this.matrixArray.clone();
 		int numColsA = a.length, numRowsA = a[0].length;
@@ -425,12 +500,22 @@ public class Matrix{
 		if(!(numColsA == numRowsA) )
 		{
 			System.out.println("Cannot find inverse of non-square matrix.");
-			m = null;
+			m = new Matrix(null);
 		}
 		else if(this.determinant() == 0)
 		{
-			System.out.println("The matrix is non-invertible, determinant 0.");
-			m = null;
+			System.out.println("The matrix is singular (non-invertible), determinant 0.");
+			m = new Matrix(null);
+		}
+		else if(numColsA == 2 && numRowsA == 2)
+		{
+			inverse[0][0] = a[1][1];
+			inverse[1][1] = a[0][0];
+			inverse[1][0] = -1*a[1][0];
+			inverse[0][1] = -1*a[0][1];
+			m = new Matrix(inverse);
+			inverse = m.multiply(1/this.determinant() ).matrixArray;
+			m = new Matrix(inverse);
 		}
 		else {
 			// calculate matrix of determinants of minors
@@ -439,7 +524,6 @@ public class Matrix{
 				{
 					inverse[col][row] = this.minorMatrix(col, row).determinant();
 				}
-			System.out.println(inverse.toString() );
 			
 			// apply "checkerboard" or minuses
 			for(int col = 0; col < numColsA; col++)
@@ -448,12 +532,10 @@ public class Matrix{
 					if(col%2 == 1 ^ row%2 == 1)  // if exactly one of the coordinates is odd
 						inverse[col][row] = -1*inverse[col][row];
 				}
-			System.out.println(inverse.toString() );
 
 			// transpose checkerboarded matrix of minors
 			m = new Matrix(inverse);
 			inverse = m.transpose().matrixArray;
-			System.out.println(inverse.toString() );
 
 			// multiply matrix by 1/determinant of A.
 			m = new Matrix(inverse);
