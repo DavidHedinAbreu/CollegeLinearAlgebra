@@ -26,7 +26,7 @@ import java.util.Vector;
 
 public class Matrix{
 	
-	double[][] matrixArray;
+	private double[][] matrixArray;
 	
 	public Matrix (double[][] a) 
 	{
@@ -110,7 +110,7 @@ public class Matrix{
 		return output;
 	}
 	
-	public double angleBetween(Matrix m2) // complete
+	public double angle(Matrix m2) // complete
 	{
 		double[][] a = this.matrixArray.clone();
 		double[][] b = m2.matrixArray.clone();
@@ -145,15 +145,68 @@ public class Matrix{
 		return output;
 	}
 	
-	public Matrix interpretRREF()  // must handle inconsistent systems
+	public String interpretRREF()  // must handle inconsistent systems
 	{
-		// given row starts at 0.  apply swapScaleReplace. advance row by 1, repeat, until at bottom row of matrix.
+		// give rank, classification (consistent with solution, dependent with parametric solution, or inconsistent)
 		// https://textbooks.math.gatech.edu/ila/parametric-form.html
-		double[][] matrixContents = {{1, 0}, {0, 1}};
-		return new Matrix(matrixContents);
+		double[][] interpret = this.matrixArray.clone();
+		String interpretation = "";
+		int row = interpret[0].length - 1, pivot = -1;
+		for(int col = interpret.length - 2; col >= 0; col--)
+		{
+			if(interpret[col][row] == 1)
+				pivot = row;
+		}
+		if(pivot == -1 && interpret[interpret.length - 1][row] == 1)
+			interpretation = "Inconsistent";
+		else if(pivot == -1 && interpret[interpret.length - 1][row] == 0)
+			interpretation = "Dependent";
+		else
+			interpretation = "Consistent";
+		
+		if(interpretation.equals("Dependent"))
+		{
+			interpretation += "\n";
+			for(row = 0; row < interpret[0].length - 1; row++)
+			{
+				for(int col = 0; col < interpret.length - 1; col++)
+				{
+					if(interpret[col][row] != 0)
+					{
+						if( ! interpretation.substring(interpretation.length() - 1).equals("\n"))
+							interpretation += " +";
+						if(correctBinary(interpret[col][row]) != 1)
+							interpretation += " " + correctBinary(interpret[col][row]);
+						interpretation += "X" + col;
+					}
+				}
+				interpretation += " = " + correctBinary(interpret[interpret.length - 1][row]) + "\n";
+			}
+		}
+		if(interpretation.equals("Consistent"))
+		{
+			interpretation += "\n";
+			for(row = 0; row < interpret[0].length ; row++)
+			{
+				for(int col = 0; col < interpret.length - 1; col++)
+				{
+					if(interpret[col][row] != 0)
+					{
+						if( ! interpretation.substring(interpretation.length() - 1).equals("\n"))
+							interpretation += " +";
+						if(correctBinary(interpret[col][row]) != 1)
+							interpretation += " " + correctBinary(interpret[col][row]);
+						interpretation += "X" + col;
+					}
+				}
+				interpretation += " = " + correctBinary(interpret[interpret.length - 1][row]) + "\n";
+			}
+		}
+		
+		return interpretation;  // new Matrix(matrixContents);
 	}
 
-	public Matrix reducedRowEchelonForm()   // completed: does not interpret RowReducedEchelonForm to provide solution(s).
+	public Matrix rREF()   // completed: does not interpret RowReducedEchelonForm to provide solution(s).
 	{
 		Matrix outputMatrix = this; // makes a clone
 		for(int topRow = 0, leftColumn = 0; topRow < outputMatrix.matrixArray[0].length && leftColumn < outputMatrix.matrixArray.length; leftColumn++) 
@@ -169,9 +222,8 @@ public class Matrix{
 		outputMatrix.rowReduceUp();
 		return outputMatrix;
 	}
-	
 
-	public void swap(int leftColumn, int topRow)   // completed: a helper for "rowReduceDown" 
+	public void swap(int leftColumn, int topRow)   // completed: a helper for "rREF" 
 	{
 		// If the leftmost column in the given row is 0, find the row with the the left-most entry of all rows at or lower than the row given. 
 		// If there are more than one, find the first. Swap that row for the row given, so the leftmost entry is in the given row.
@@ -197,7 +249,7 @@ public class Matrix{
 		this.matrixArray = output;
 	}
 
-	public boolean scale(int leftColumn, int topRow)   // completed:  a helper method to "rowReduceDown"
+	public boolean scale(int leftColumn, int topRow)   // completed:  a helper method to "rREF"
 	{
 		double[][] output = this.matrixArray.clone();
 		boolean doRowReduceDown = true;
@@ -219,7 +271,7 @@ public class Matrix{
 		return doRowReduceDown;
 	}
 
-	public void rowReduceDown(int leftColumn, int topRow)  // completed: helper method for RREF
+	public void rowReduceDown(int leftColumn, int topRow)  // completed: helper method for "rREF"
 	{
 		double[][] output = this.matrixArray.clone();
 		double scaleFactor;
@@ -238,7 +290,7 @@ public class Matrix{
 		this.matrixArray = output;
 	}
 	
-	public void rowReduceUp()  // completed: helper method for RREF
+	public void rowReduceUp()  // completed: helper method for "rREF"
 	{
 		// Start at bottomRow = length - 1, leftColumn = 0. If the value at that position is zero, advance leftColumn, checking each time whether the value there is zero.
 		// If all the positions in the row are 0, decrease bottomRow by 1, reset leftColumn to 0, and perform zero checks on the row above, left to right.
@@ -274,16 +326,16 @@ public class Matrix{
 		return new Matrix(matrixContents);
 	}
 
-	public Matrix crossProductOf(Matrix a, Matrix b)
+	public Matrix crossProduct(Matrix m2)
 	{
 		double[][] matrixContents = {{1, 0}, {0, 1}};
 		return new Matrix(matrixContents);
 	}
 	
-	public Matrix add(Matrix m)  // completed
+	public Matrix add(Matrix m2)  // completed
 	{
 		double[][] a = this.matrixArray.clone();
-		double[][] b = m.matrixArray.clone();
+		double[][] b = m2.matrixArray.clone();
 		double[][] output;
 		if( !(a.length == b.length && a[0].length == b[0].length) )
 		{
@@ -329,13 +381,11 @@ public class Matrix{
 				}
 			}
 			// If values that should be zero are non-zero because of error representing the numbers in binary, fix that.
-			double tolerance = 1E-16;
 			for(int col = 0; col < output.length; col++)
 			{
 				for(int row = 0; row < output[0].length; row++)
 				{
-					if(output[col][row] > -1*tolerance && output[col][row] < tolerance)
-						output[col][row] = 0;
+					output[col][row] = correctBinary(output[col][row]);
 				}
 			}
 		}
@@ -365,15 +415,14 @@ public class Matrix{
 			}
 		}
 		// If values that should be zero are non-zero because of error representing the numbers in binary, fix that.
-		double tolerance = 1E-16;
 		for(int col = 0; col < output.length; col++)
 		{
 			for(int row = 0; row < output[0].length; row++)
 			{
-				if(output[col][row] > -1*tolerance && output[col][row] < tolerance)
-					output[col][row] = 0;
+				output[col][row] = correctBinary(output[col][row]);
 			}
 		}
+
 		return new Matrix(output);
 	}
 
@@ -478,7 +527,6 @@ public class Matrix{
 		return minorMatrix;
 	}
 	
-
 	public Matrix transpose()  // complete
 	{
 		double[][] a = this.matrixArray.clone();
@@ -559,7 +607,7 @@ public class Matrix{
 				for(int column = 0; column < a.length; column++)
 				{
 					if(a[column][row]%1 != 0)
-						output += a[column][row] + " ";
+						output += correctBinary(a[column][row]) + " ";
 					else 
 						if(a[column][row] < 10)
 							output += "   " + (int)a[column][row] + " ";
@@ -574,6 +622,18 @@ public class Matrix{
 		return output;
 	}
 	
+	// Corrects binary misrepresentation rounding error for integer values.
+	public static double correctBinary(double d)   // complete
+	{
+		double corrected;
+		double tolerance = 1E-15;
+		if(Math.abs(d)%1 > 1-tolerance || Math.abs(d)%1 < tolerance)
+			corrected = Math.round(d);
+		else
+			corrected = d;
+		return corrected;
+	}
+
 	public class CoFactor  // complete
 	{
 		double scalar;
@@ -612,50 +672,6 @@ public class Matrix{
 			return this.scalar + ", \n" + output;
 		}
 	}	
+
 }
 
-		/* Set default starting point for row-replacement up, for the case of a consistent system.
-		int bottomRow = output[0].length - 1, rightColumn = output.length - 2;  
-		// Check to see whether there is no solution / the system is inconsistent: every entry on the bottom row zero, except for the last which is non-zero pivot.
-		// If so, scale the last entry to 1, then row-replace up in the last column.
-		if(output[output.length-1][output[0].length-1] == 1 && output[output.length-2][output[0].length-1] == 0) // If inconsistent
-		{	
-			output[output.length-1][output[0].length-1] = 1;
-			for(int row = output[0].length-2; row >= 0; row--)
-			{
-				output[output.length-1][row] = 0;
-			}
-		}
-		// In the case of a dependent or inconsistent system, set starting place for row-replacement to the first non-zero entry "1" on the left, in the second to last row.  
-		// Begin row replacement from that pivot point instead of the default.
-		if(output[output.length-2][output[0].length-1] == 0)  
-		{
-			bottomRow = output[0].length - 2;
-			for(rightColumn = 0; rightColumn < output.length - 1 && output[rightColumn][bottomRow] == 0; rightColumn++)
-			{
-				// no code block, purpose is to advance rightColumn to the right place.
-			}
-		}
-		// Start at bottom row, rightmost column (left of solution vector).  Row-replace any higher row with a rightmost column entry, so that entry becomes zero.  
-		// If the bottom has zero as bottom-rightmost entry, move up until the row does have a nonzero rightmost column entry.
-		for(; bottomRow >= 0; bottomRow--, rightColumn--)
-		{
-			while(output[rightColumn][bottomRow] == 0)
-			{
-				bottomRow--;
-			}
-			for(int row = bottomRow - 1; row >= 0; row--)
-			{
-				if(output[rightColumn][row] != 0)
-				{
-					scaleFactor = -1*output[rightColumn][row];
-					for (int col = rightColumn; col <= output.length - 1; col++)
-					{
-						output[col][row] += scaleFactor*output[col][bottomRow];
-					}
-				}
-			}
-			whatTF(output);
-		}
-		return new Matrix(output);
-	} */
