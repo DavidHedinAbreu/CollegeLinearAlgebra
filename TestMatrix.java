@@ -16,9 +16,9 @@ public class TestMatrix {
 		Matrix m4 = new Matrix(twoBy2);
 
 				
-		System.out.println(m1.toString() );
-		System.out.println(m1.rREF().toString() );
-		System.out.println(m1.rREF().interpretRREF() );
+		System.out.println(m3.toString() );
+		System.out.println(m3.rREF().toString() );
+		System.out.println(m3.rREF().interpretRREF() );
 		
 
 	}

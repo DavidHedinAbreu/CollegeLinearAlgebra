@@ -151,23 +151,27 @@ public class Matrix{
 		// https://textbooks.math.gatech.edu/ila/parametric-form.html
 		double[][] interpret = this.matrixArray.clone();
 		String interpretation = "";
-		int row = interpret[0].length - 1, pivot = -1;
-		for(int col = interpret.length - 2; col >= 0; col--)
+		int pivot = -1;
+		for(int row = interpret[0].length - 1; row >= 0; row--)
 		{
-			if(interpret[col][row] == 1)
-				pivot = row;
+			for(int col = interpret.length - 2; col >= 0; col--)
+			{
+				if(interpret[col][row] == 1)
+					pivot = row;
+			}
+			if(pivot == -1 && interpret[interpret.length - 1][row] == 1)
+				interpretation = "Inconsistent";
+			else if(pivot == -1 && interpret[interpret.length - 1][row] == 0)
+				interpretation = "Dependent, rank " + row ;
+			else if(interpretation.equals("") )
+				interpretation = "Consistent";
 		}
-		if(pivot == -1 && interpret[interpret.length - 1][row] == 1)
-			interpretation = "Inconsistent";
-		else if(pivot == -1 && interpret[interpret.length - 1][row] == 0)
-			interpretation = "Dependent";
-		else
-			interpretation = "Consistent";
+
 		
-		if(interpretation.equals("Dependent"))
+		if(interpretation.substring(0, 9).equals("Dependent"))
 		{
 			interpretation += "\n";
-			for(row = 0; row < interpret[0].length - 1; row++)
+			for(int row = 0; row < interpret[0].length - 1; row++)
 			{
 				for(int col = 0; col < interpret.length - 1; col++)
 				{
@@ -186,7 +190,7 @@ public class Matrix{
 		if(interpretation.equals("Consistent"))
 		{
 			interpretation += "\n";
-			for(row = 0; row < interpret[0].length ; row++)
+			for(int row = 0; row < interpret[0].length ; row++)
 			{
 				for(int col = 0; col < interpret.length - 1; col++)
 				{
